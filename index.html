@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Investor Tracker — Pitching Inovatif</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c27;
+    --gold: #f5c842;
+    --gold2: #e8a020;
+    --green: #2dca73;
+    --red: #ff4d6d;
+    --blue: #4da6ff;
+    --text: #f0f0f5;
+    --muted: #6b6b85;
+    --border: rgba(245,200,66,0.15);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, #0a0a0f 0%, #1a1208 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-left h1 { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; color: var(--gold); }
+  .header-left p { font-size: 0.7rem; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 2px; }
+  .header-right { display: flex; gap: 10px; align-items: center; }
+  .room-tabs { display: flex; gap: 4px; background: var(--surface); border-radius: 8px; padding: 4px; }
+  .room-tab { padding: 6px 16px; border-radius: 6px; border: none; cursor: pointer; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.8rem; color: var(--muted); background: transparent; transition: all 0.2s; }
+  .room-tab.active { background: var(--gold); color: #0a0a0f; }
+  .sync-indicator { display: flex; align-items: center; gap: 6px; font-size: 0.7rem; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+  .sync-dot.syncing { background: var(--gold); animation: none; }
+  .sync-dot.error { background: var(--red); animation: none; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* MAIN */
+  .main { display: grid; grid-template-columns: 320px 1fr; height: calc(100vh - 65px); }
+
+  /* INVESTORS PANEL */
+  .investors-panel { background: var(--surface); border-right: 1px solid var(--border); overflow-y: auto; padding: 18px; }
+  .panel-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.68rem; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; }
+
+  .investor-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 10px; }
+  .investor-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .investor-avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--gold), var(--gold2)); display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.8rem; color: #0a0a0f; flex-shrink: 0; }
+  .investor-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem; }
+  .investor-room-tag { font-size: 0.65rem; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .balance-label { font-size: 0.62rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .balance-amount { font-family: 'DM Mono', monospace; font-size: 1.1rem; color: var(--gold); transition: color 0.3s; }
+  .balance-amount.low { color: var(--red); }
+  .balance-bar { height: 3px; background: rgba(255,255,255,0.07); border-radius: 2px; margin-top: 5px; margin-bottom: 5px; }
+  .balance-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--green), var(--gold)); transition: width 0.5s; }
+  .balance-fill.low { background: linear-gradient(90deg, var(--red), #ff8c69); }
+  .balance-sub { font-size: 0.65rem; color: var(--muted); font-family: 'DM Mono', monospace; }
+
+  /* STUDENTS */
+  .students-panel { overflow-y: auto; display: flex; flex-direction: column; }
+  .students-top { padding: 16px 22px 0; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .btn-invest-main { padding: 9px 20px; border-radius: 9px; border: none; background: linear-gradient(135deg, var(--gold), var(--gold2)); color: #0a0a0f; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.82rem; cursor: pointer; transition: opacity 0.2s; }
+  .btn-invest-main:hover { opacity: 0.88; }
+
+  .stats-bar { display: flex; gap: 20px; padding: 12px 22px; flex-wrap: wrap; border-bottom: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; }
+  .stat-item { display: flex; flex-direction: column; }
+  .stat-val { font-family: 'DM Mono', monospace; font-size: 0.95rem; color: var(--gold); }
+  .stat-lbl { font-size: 0.62rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+
+  .students-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; padding: 16px 22px; flex: 1; align-content: start; }
+  .student-card { background: var(--surface); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px 14px; transition: all 0.2s; }
+  .student-card:hover { border-color: rgba(245,200,66,0.3); }
+  .student-num { font-family: 'DM Mono', monospace; font-size: 0.6rem; color: var(--muted); margin-bottom: 3px; }
+  .student-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.88rem; margin-bottom: 6px; }
+  .student-total { font-family: 'DM Mono', monospace; font-size: 0.95rem; color: var(--green); }
+  .student-total.zero { color: var(--muted); font-size: 0.8rem; }
+  .investment-pills { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 6px; }
+  .investment-pill { font-size: 0.6rem; padding: 2px 6px; border-radius: 20px; background: rgba(245,200,66,0.1); color: var(--gold); font-family: 'DM Mono', monospace; }
+
+  /* LOG */
+  .log-section { border-top: 1px solid rgba(255,255,255,0.05); padding: 12px 22px 18px; flex-shrink: 0; }
+  .log-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .log-list { display: flex; flex-direction: column; gap: 5px; max-height: 150px; overflow-y: auto; }
+  .log-item { font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--muted); display: flex; gap: 10px; }
+  .log-time { color: rgba(245,200,66,0.35); flex-shrink: 0; }
+  .log-amount { color: var(--green); }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 200; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+  .modal-overlay.show { display: flex; animation: fadeIn 0.2s; }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 26px; width: 400px; max-width: 95vw; animation: slideUp 0.22s; }
+  @keyframes slideUp { from{transform:translateY(16px);opacity:0} to{transform:translateY(0);opacity:1} }
+  .modal-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.15rem; color: var(--gold); margin-bottom: 3px; }
+  .modal-sub { font-size: 0.78rem; color: var(--muted); margin-bottom: 20px; }
+  .form-group { margin-bottom: 14px; }
+  .form-label { font-size: 0.67rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; display: block; }
+  .form-select, .form-input { width: 100%; padding: 11px 13px; background: var(--surface2); border: 1px solid rgba(255,255,255,0.1); border-radius: 9px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.88rem; outline: none; transition: border-color 0.2s; appearance: none; }
+  .form-select:focus, .form-input:focus { border-color: var(--gold); }
+  .quick-amounts { display: flex; gap: 5px; margin-top: 7px; flex-wrap: wrap; }
+  .quick-btn { padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(245,200,66,0.25); background: transparent; color: var(--gold); font-size: 0.72rem; font-family: 'DM Mono', monospace; cursor: pointer; transition: all 0.2s; }
+  .quick-btn:hover { background: rgba(245,200,66,0.12); }
+  .modal-footer { display: flex; gap: 8px; margin-top: 20px; }
+  .btn-cancel { flex: 1; padding: 11px; border-radius: 9px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: var(--muted); font-family: 'Syne', sans-serif; font-weight: 700; cursor: pointer; font-size: 0.82rem; }
+  .btn-confirm { flex: 2; padding: 11px; border-radius: 9px; border: none; background: linear-gradient(135deg, var(--gold), var(--gold2)); color: #0a0a0f; font-family: 'Syne', sans-serif; font-weight: 800; cursor: pointer; font-size: 0.82rem; }
+  .btn-confirm:hover { opacity: 0.9; }
+
+  /* SETUP */
+  .setup-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 300; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .setup-box { background: var(--surface); border: 1px solid var(--border); border-radius: 22px; padding: 32px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; }
+  .setup-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.7rem; color: var(--gold); margin-bottom: 4px; }
+  .setup-sub { color: var(--muted); font-size: 0.82rem; margin-bottom: 6px; }
+  .session-key-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; margin-bottom: 24px; }
+  .session-key-label { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .session-key-row { display: flex; gap: 8px; align-items: center; }
+  .session-key-input { flex: 1; padding: 9px 12px; background: var(--bg); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--gold); font-family: 'DM Mono', monospace; font-size: 0.9rem; outline: none; }
+  .session-key-input:focus { border-color: var(--gold); }
+  .btn-gen { padding: 9px 14px; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--gold); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.72rem; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+  .btn-gen:hover { background: rgba(245,200,66,0.1); }
+  .btn-join { padding: 9px 14px; border-radius: 8px; border: none; background: var(--gold); color: #0a0a0f; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.72rem; cursor: pointer; white-space: nowrap; }
+  .section-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.68rem; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; margin-top: 18px; }
+  .investor-row { display: flex; gap: 7px; margin-bottom: 7px; }
+  .investor-row input, .investor-row select { padding: 9px 11px; background: var(--surface2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.82rem; outline: none; }
+  .investor-row input { flex: 1; }
+  .investor-row select { min-width: 90px; appearance: none; }
+  .investor-row input:focus, .investor-row select:focus { border-color: var(--gold); }
+  .remove-btn { width: 30px; height: 30px; border-radius: 7px; border: none; background: rgba(255,77,109,0.12); color: var(--red); cursor: pointer; font-size: 1rem; flex-shrink: 0; }
+  .add-row-btn { padding: 8px 14px; border-radius: 8px; border: 1px dashed rgba(245,200,66,0.25); background: transparent; color: var(--gold); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.75rem; cursor: pointer; }
+  .student-ta { width: 100%; min-height: 100px; padding: 10px 12px; background: var(--surface2); border: 1px solid rgba(255,255,255,0.1); border-radius: 9px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.77rem; outline: none; resize: vertical; line-height: 1.7; }
+  .student-ta:focus { border-color: var(--gold); }
+  .hint { font-size: 0.68rem; color: var(--muted); margin-top: 4px; }
+  .modal-input-row { padding: 10px 12px; background: var(--surface2); border: 1px solid rgba(255,255,255,0.1); border-radius: 9px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.88rem; }
+  .btn-start { width: 100%; padding: 14px; border-radius: 11px; border: none; background: linear-gradient(135deg, var(--gold), var(--gold2)); color: #0a0a0f; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.95rem; cursor: pointer; margin-top: 22px; }
+  .btn-start:hover { opacity: 0.9; }
+
+  /* JOIN MODE */
+  .join-mode-box { background: var(--surface2); border: 1px solid rgba(77,166,255,0.2); border-radius: 12px; padding: 16px; margin-top: 16px; }
+  .join-mode-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.82rem; color: var(--blue); margin-bottom: 8px; }
+
+  .btn-reset { padding: 6px 12px; border-radius: 7px; border: 1px solid rgba(255,77,109,0.25); background: transparent; color: var(--red); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.72rem; cursor: pointer; }
+  .btn-reset:hover { background: rgba(255,77,109,0.1); }
+  .btn-end-session { padding: 7px 14px; border-radius: 7px; border: none; background: linear-gradient(135deg, #ff4d6d, #c0392b); color: #fff; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.75rem; cursor: pointer; transition: opacity 0.2s; }
+  .btn-end-session:hover { opacity: 0.85; }
+
+  /* REKAP MODAL */
+  .rekap-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 400; align-items: flex-start; justify-content: center; overflow-y: auto; padding: 30px 20px; backdrop-filter: blur(6px); }
+  .rekap-overlay.show { display: flex; animation: fadeIn 0.25s; }
+  .rekap-box { background: var(--surface); border: 1px solid var(--border); border-radius: 22px; width: 100%; max-width: 780px; overflow: hidden; animation: slideUp 0.28s; }
+  .rekap-header { background: linear-gradient(135deg, #1a1208, #0a0a0f); padding: 28px 32px; border-bottom: 1px solid var(--border); }
+  .rekap-header h2 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.5rem; color: var(--gold); margin-bottom: 4px; }
+  .rekap-header p { font-size: 0.78rem; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .rekap-body { padding: 24px 32px; }
+  .rekap-section-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin: 20px 0 12px; }
+  .rekap-section-title:first-child { margin-top: 0; }
+  .rekap-podium { display: flex; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+  .podium-card { flex: 1; min-width: 160px; background: var(--surface2); border-radius: 12px; padding: 14px 16px; border: 1px solid rgba(255,255,255,0.06); position: relative; overflow: hidden; }
+  .podium-card.first { border-color: rgba(245,200,66,0.4); background: rgba(245,200,66,0.06); }
+  .podium-card.second { border-color: rgba(192,192,192,0.3); }
+  .podium-card.third { border-color: rgba(205,127,50,0.3); }
+  .podium-rank { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem; margin-bottom: 4px; }
+  .podium-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.85rem; margin-bottom: 6px; }
+  .podium-amount { font-family: 'DM Mono', monospace; font-size: 0.9rem; color: var(--green); }
+  .podium-investors { font-size: 0.68rem; color: var(--muted); margin-top: 4px; }
+  .rekap-table { width: 100%; border-collapse: collapse; }
+  .rekap-table th { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.68rem; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); padding: 8px 10px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .rekap-table td { padding: 9px 10px; font-size: 0.82rem; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .rekap-table tr:last-child td { border-bottom: none; }
+  .rekap-table .rank-col { font-family: 'DM Mono', monospace; color: var(--muted); font-size: 0.75rem; }
+  .rekap-table .amount-col { font-family: 'DM Mono', monospace; color: var(--green); }
+  .rekap-table .zero-col { font-family: 'DM Mono', monospace; color: var(--muted); font-size: 0.75rem; }
+  .rekap-table .investor-bal { font-family: 'DM Mono', monospace; color: var(--gold); }
+  .rekap-footer { padding: 20px 32px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+  .btn-print { padding: 11px 22px; border-radius: 9px; border: 1px solid rgba(255,255,255,0.15); background: transparent; color: var(--text); font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.82rem; cursor: pointer; }
+  .btn-close-rekap { padding: 11px 22px; border-radius: 9px; border: none; background: linear-gradient(135deg, var(--gold), var(--gold2)); color: #0a0a0f; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.82rem; cursor: pointer; }
+  .summary-pills { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+  .summary-pill { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 16px; }
+  .summary-pill .val { font-family: 'DM Mono', monospace; font-size: 1rem; color: var(--gold); }
+  .summary-pill .lbl { font-size: 0.62rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 22px; right: 22px; z-index: 999; background: var(--green); color: #000; padding: 11px 18px; border-radius: 9px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.82rem; transform: translateY(70px); opacity: 0; transition: all 0.28s; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.error { background: var(--red); color: #fff; }
+
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+  .empty { text-align: center; padding: 40px; color: var(--muted); font-size: 0.82rem; }
+
+  @media print {
+    body { background: white; color: black; }
+    .header, .main, .rekap-footer, .btn-print, .btn-close-rekap { display: none !important; }
+    .rekap-overlay { position: static; background: white; padding: 0; display: block !important; }
+    .rekap-box { border: none; border-radius: 0; box-shadow: none; }
+    .rekap-header { background: white; color: black; }
+    .rekap-header h2 { color: #333; }
+    .rekap-header p, .rekap-section-title { color: #666; }
+    .rekap-table td, .rekap-table th { color: #333; border-color: #ddd; }
+    .podium-card { border: 1px solid #ddd; background: #f9f9f9; }
+    .summary-pill { border: 1px solid #ddd; background: #f9f9f9; }
+    .summary-pill .val, .investor-bal { color: #333; }
+    .amount-col { color: #2a7a4a; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SETUP SCREEN -->
+<div class="setup-overlay" id="setupScreen">
+  <div class="setup-box">
+    <div class="setup-title">💼 Investor Tracker</div>
+    <div class="setup-sub">Sesi Pitching Produk Inovatif · Multi-user Real-time</div>
+
+    <!-- SESSION KEY -->
+    <div class="session-key-box">
+      <div class="session-key-label">Kode Sesi (bagikan ke semua guru)</div>
+      <div class="session-key-row">
+        <input class="session-key-input" id="sessionKey" placeholder="Ketik kode sesi..." maxlength="20">
+        <button class="btn-gen" onclick="genKey()">🎲 Acak</button>
+        <button class="btn-join" onclick="joinSession()">Gabung →</button>
+      </div>
+      <div class="hint" style="margin-top:6px">Ketik kode yang sama di semua perangkat. Atau buat sesi baru di bawah.</div>
+    </div>
+
+    <div style="text-align:center;color:var(--muted);font-size:0.78rem;margin: -4px 0 12px">— atau buat sesi baru —</div>
+
+    <div class="section-title">Modal Awal per Investor (Rp)</div>
+    <input type="number" class="modal-input-row" id="modalAwal" value="500000000" style="width:100%">
+
+    <div class="section-title">Daftar Investor</div>
+    <div id="investorSetupList"></div>
+    <button class="add-row-btn" onclick="addInvestorRow()">+ Tambah Investor</button>
+
+    <div class="section-title">Siswa / Kelompok — Ruang A</div>
+    <textarea class="student-ta" id="studentsA" placeholder="Satu nama per baris..."></textarea>
+
+    <div class="section-title">Siswa / Kelompok — Ruang B</div>
+    <textarea class="student-ta" id="studentsB" placeholder="Satu nama per baris..."></textarea>
+
+    <button class="btn-start" onclick="startSession()">🚀 Buat & Mulai Sesi</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" style="display:none">
+  <div class="header">
+    <div class="header-left">
+      <h1>💼 Investor Tracker</h1>
+      <p id="headerInfo">memuat...</p>
+    </div>
+    <div class="header-right">
+      <div class="sync-indicator">
+        <div class="sync-dot" id="syncDot"></div>
+        <span id="syncText">sinkron</span>
+      </div>
+      <div class="room-tabs">
+        <button class="room-tab active" onclick="switchRoom('A')">Ruang A</button>
+        <button class="room-tab" onclick="switchRoom('B')">Ruang B</button>
+      </div>
+      <button class="btn-end-session" onclick="openRekap()">🏁 Akhiri Sesi</button>
+      <button class="btn-reset" onclick="resetAll()">Reset</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="investors-panel">
+      <div class="panel-title">Investor</div>
+      <div id="investorsList"></div>
+    </div>
+    <div class="students-panel">
+      <div class="students-top">
+        <div class="panel-title" id="studentsTitle" style="margin:0">Siswa</div>
+        <button class="btn-invest-main" onclick="openModal()">💰 Catat Investasi</button>
+      </div>
+      <div class="stats-bar" id="statsBar"></div>
+      <div class="students-grid" id="studentsGrid"></div>
+      <div class="log-section">
+        <div class="log-title">📋 Log Transaksi</div>
+        <div class="log-list" id="logList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- INVEST MODAL -->
+<div class="modal-overlay" id="investModal">
+  <div class="modal">
+    <div class="modal-title">💰 Catat Investasi</div>
+    <div class="modal-sub" id="modalSub">Pilih investor dan siswa</div>
+    <div class="form-group">
+      <label class="form-label">Investor</label>
+      <select class="form-select" id="selInvestor"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Siswa / Kelompok</label>
+      <select class="form-select" id="selStudent"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Jumlah Investasi (Rp)</label>
+      <input type="number" class="form-input" id="investAmt" placeholder="Masukkan nominal...">
+      <div class="quick-amounts">
+        <button class="quick-btn" onclick="setAmt(10000000)">10 Jt</button>
+        <button class="quick-btn" onclick="setAmt(25000000)">25 Jt</button>
+        <button class="quick-btn" onclick="setAmt(50000000)">50 Jt</button>
+        <button class="quick-btn" onclick="setAmt(100000000)">100 Jt</button>
+        <button class="quick-btn" onclick="setAmt(200000000)">200 Jt</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Catatan (opsional)</label>
+      <input type="text" class="form-input" id="investNote" placeholder="Alasan investasi...">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Batal</button>
+      <button class="btn-confirm" onclick="doInvest()">✅ Konfirmasi</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- REKAP MODAL -->
+<div class="rekap-overlay" id="rekapModal">
+  <div class="rekap-box">
+    <div class="rekap-header">
+      <h2>🏁 Rekap Akhir Sesi</h2>
+      <p id="rekapSessionInfo">Sesi pitching selesai</p>
+    </div>
+    <div class="rekap-body" id="rekapBody"></div>
+    <div class="rekap-footer">
+      <button class="btn-print" onclick="printRekap()">🖨️ Cetak / Simpan PDF</button>
+      <button class="btn-close-rekap" onclick="closeRekap()">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────
+let sessionKey = '';
+let currentRoom = 'A';
+let pollingInterval = null;
+let lastHash = '';
+
+function fmt(n) {
+  if (n >= 1e9) return 'Rp ' + (n/1e9).toFixed(2).replace(/\.?0+$/, '') + ' M';
+  if (n >= 1e6) return 'Rp ' + (n/1e6).toFixed(1).replace(/\.?0+$/, '') + ' Jt';
+  return 'Rp ' + n.toLocaleString('id-ID');
+}
+
+// ─── SETUP ───────────────────────────────────────────────
+function addInvestorRow(name = '', room = 'A') {
+  const list = document.getElementById('investorSetupList');
+  const row = document.createElement('div');
+  row.className = 'investor-row';
+  row.innerHTML = `
+    <input type="text" placeholder="Nama investor..." value="${name}">
+    <select>
+      <option value="A" ${room==='A'?'selected':''}>Ruang A</option>
+      <option value="B" ${room==='B'?'selected':''}>Ruang B</option>
+      <option value="AB">Keduanya</option>
+    </select>
+    <button class="remove-btn" onclick="this.parentElement.remove()">×</button>`;
+  list.appendChild(row);
+}
+
+function genKey() {
+  const words = ['PITCHING','INOVATIF','INVESTOR','PRODUK','KREATIF','STARTUP','SESI'];
+  const w = words[Math.floor(Math.random() * words.length)];
+  const n = Math.floor(100 + Math.random() * 900);
+  document.getElementById('sessionKey').value = w + n;
+}
+
+async function joinSession() {
+  const key = document.getElementById('sessionKey').value.trim().toUpperCase();
+  if (!key) { showToast('Masukkan kode sesi!', true); return; }
+  setSyncState('syncing');
+  try {
+    const data = await storageGet('session:' + key);
+    if (!data) { showToast('Kode sesi tidak ditemukan!', true); setSyncState('error'); return; }
+    sessionKey = key;
+    startApp();
+  } catch(e) {
+    showToast('Gagal terhubung: ' + e.message, true);
+    setSyncState('error');
+  }
+}
+
+async function startSession() {
+  const modal = parseInt(document.getElementById('modalAwal').value) || 500000000;
+  const rows = document.querySelectorAll('#investorSetupList .investor-row');
+  const investors = [];
+  rows.forEach((row, i) => {
+    const name = row.querySelector('input').value.trim();
+    const room = row.querySelector('select').value;
+    if (!name) return;
+    investors.push({ id: i + 1, name, room, balance: modal, initial: modal });
+  });
+  if (!investors.length) { showToast('Tambahkan minimal 1 investor!', true); return; }
+
+  const parseStudents = (txt, room) =>
+    txt.split('\n').map(s => s.trim()).filter(Boolean).map((name, i) => ({
+      id: `${room}-${i+1}`, name, room, investments: [], total: 0
+    }));
+
+  const studentsA = parseStudents(document.getElementById('studentsA').value, 'A');
+  const studentsB = parseStudents(document.getElementById('studentsB').value, 'B');
+
+  if (!studentsA.length && !studentsB.length) { showToast('Masukkan daftar siswa!', true); return; }
+
+  const key = document.getElementById('sessionKey').value.trim().toUpperCase() || ('SESI' + Date.now().toString().slice(-4));
+  document.getElementById('sessionKey').value = key;
+
+  const sessionData = { investors, students: { A: studentsA, B: studentsB }, log: [], createdAt: Date.now() };
+
+  setSyncState('syncing');
+  try {
+    await storageSet('session:' + key, JSON.stringify(sessionData));
+    sessionKey = key;
+    startApp();
+  } catch(e) {
+    showToast('Gagal menyimpan sesi: ' + e.message, true);
+    setSyncState('error');
+  }
+}
+
+function startApp() {
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  renderFromStorage();
+  pollingInterval = setInterval(pollStorage, 2500);
+}
+
+// ─── STORAGE ─────────────────────────────────────────────
+async function storageGet(key) {
+  try {
+    const result = await window.storage.get(key, true);
+    return result ? result.value : null;
+  } catch(e) { return null; }
+}
+
+async function storageSet(key, value) {
+  const result = await window.storage.set(key, value, true);
+  if (!result) throw new Error('Storage write failed');
+  return result;
+}
+
+async function getSessionData() {
+  const raw = await storageGet('session:' + sessionKey);
+  return raw ? JSON.parse(raw) : null;
+}
+
+async function saveSessionData(data) {
+  await storageSet('session:' + sessionKey, JSON.stringify(data));
+}
+
+// ─── POLLING ─────────────────────────────────────────────
+async function pollStorage() {
+  try {
+    const raw = await storageGet('session:' + sessionKey);
+    if (!raw) return;
+    const hash = raw.length + raw.slice(-20);
+    if (hash !== lastHash) {
+      lastHash = hash;
+      renderData(JSON.parse(raw));
+    }
+    setSyncState('ok');
+  } catch(e) { setSyncState('error'); }
+}
+
+async function renderFromStorage() {
+  const data = await getSessionData();
+  if (data) renderData(data);
+}
+
+function setSyncState(state) {
+  const dot = document.getElementById('syncDot');
+  const txt = document.getElementById('syncText');
+  dot.className = 'sync-dot' + (state !== 'ok' ? ' ' + state : '');
+  txt.textContent = state === 'ok' ? 'sinkron' : state === 'syncing' ? 'menyinkron...' : 'error';
+}
+
+// ─── RENDER ──────────────────────────────────────────────
+function renderData(data) {
+  const { investors, students, log } = data;
+  const room = currentRoom;
+
+  document.getElementById('headerInfo').textContent =
+    `Sesi: ${sessionKey} · ${investors.length} Investor · ${(students.A||[]).length + (students.B||[]).length} Siswa`;
+
+  // Investors
+  const visible = investors.filter(i => i.room === room || i.room === 'AB');
+  document.getElementById('investorsList').innerHTML = visible.map(inv => {
+    const pct = Math.max(0, inv.balance / inv.initial * 100);
+    const low = pct < 20;
+    const initials = inv.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    return `<div class="investor-card">
+      <div class="investor-header">
+        <div class="investor-avatar">${initials}</div>
+        <div>
+          <div class="investor-name">${inv.name}</div>
+          <div class="investor-room-tag">Ruang ${inv.room}</div>
+        </div>
+      </div>
+      <div class="balance-label">Saldo tersisa</div>
+      <div class="balance-amount ${low ? 'low' : ''}">${fmt(inv.balance)}</div>
+      <div class="balance-bar"><div class="balance-fill ${low ? 'low' : ''}" style="width:${pct}%"></div></div>
+      <div class="balance-sub">Diinvestasikan: ${fmt(inv.initial - inv.balance)} (${(100 - pct).toFixed(0)}%)</div>
+    </div>`;
+  }).join('') || '<div class="empty">Tidak ada investor di ruang ini</div>';
+
+  // Students
+  const studs = (students[room] || []);
+  document.getElementById('studentsTitle').textContent = `Siswa — Ruang ${room} (${studs.length})`;
+  document.getElementById('studentsGrid').innerHTML = studs.map((s, i) => {
+    const pills = (s.investments || []).map(inv =>
+      `<span class="investment-pill">${inv.investorName}: ${fmt(inv.amount)}</span>`
+    ).join('');
+    return `<div class="student-card">
+      <div class="student-num">#${i + 1}</div>
+      <div class="student-name">${s.name}</div>
+      <div class="student-total ${s.total === 0 ? 'zero' : ''}">${s.total === 0 ? 'Belum ada investasi' : fmt(s.total)}</div>
+      ${pills ? `<div class="investment-pills">${pills}</div>` : ''}
+    </div>`;
+  }).join('') || '<div class="empty">Belum ada siswa di ruang ini</div>';
+
+  // Stats
+  const totalSisa = visible.reduce((s, i) => s + i.balance, 0);
+  const totalInvested = visible.reduce((s, i) => s + (i.initial - i.balance), 0);
+  const top = [...studs].sort((a, b) => b.total - a.total)[0];
+  document.getElementById('statsBar').innerHTML = `
+    <div class="stat-item"><div class="stat-val">${fmt(totalSisa)}</div><div class="stat-lbl">Saldo Investor</div></div>
+    <div class="stat-item"><div class="stat-val">${fmt(totalInvested)}</div><div class="stat-lbl">Total Investasi</div></div>
+    <div class="stat-item"><div class="stat-val">${studs.length}</div><div class="stat-lbl">Siswa</div></div>
+    <div class="stat-item"><div class="stat-val">${studs.filter(s => s.total > 0).length}</div><div class="stat-lbl">Dapat Investasi</div></div>
+    ${top && top.total > 0 ? `<div class="stat-item"><div class="stat-val" style="font-size:0.78rem;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${top.name}</div><div class="stat-lbl">🏆 ${fmt(top.total)}</div></div>` : ''}
+  `;
+
+  // Log
+  const logs = [...(log || [])].reverse().slice(0, 25);
+  document.getElementById('logList').innerHTML = logs.map(l =>
+    `<div class="log-item"><span class="log-time">${l.time}</span><span>${l.investor} → ${l.student}: <span class="log-amount">${fmt(l.amount)}</span>${l.note ? ' · ' + l.note : ''}</span></div>`
+  ).join('') || '<div style="color:var(--muted);font-size:0.75rem;font-family:\'DM Mono\',monospace">Belum ada transaksi.</div>';
+}
+
+// ─── ROOM SWITCH ─────────────────────────────────────────
+function switchRoom(room) {
+  currentRoom = room;
+  document.querySelectorAll('.room-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.room-tab')[room === 'A' ? 0 : 1].classList.add('active');
+  renderFromStorage();
+}
+
+// ─── INVEST MODAL ─────────────────────────────────────────
+async function openModal() {
+  const data = await getSessionData();
+  if (!data) { showToast('Gagal memuat data!', true); return; }
+  const room = currentRoom;
+  const investors = data.investors.filter(i => i.room === room || i.room === 'AB');
+  const students = data.students[room] || [];
+  document.getElementById('selInvestor').innerHTML = investors.map(inv =>
+    `<option value="${inv.id}">${inv.name} — ${fmt(inv.balance)}</option>`
+  ).join('');
+  document.getElementById('selStudent').innerHTML = students.map(s =>
+    `<option value="${s.id}">${s.name}</option>`
+  ).join('');
+  document.getElementById('investAmt').value = '';
+  document.getElementById('investNote').value = '';
+  document.getElementById('modalSub').textContent = `Ruang ${room} · ${investors.length} investor`;
+  document.getElementById('investModal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('investModal').classList.remove('show');
+}
+
+function setAmt(n) { document.getElementById('investAmt').value = n; }
+
+async function doInvest() {
+  const invId = parseInt(document.getElementById('selInvestor').value);
+  const stuId = document.getElementById('selStudent').value;
+  const amount = parseInt(document.getElementById('investAmt').value);
+  const note = document.getElementById('investNote').value.trim();
+
+  if (!amount || amount <= 0) { showToast('Masukkan jumlah investasi!', true); return; }
+
+  setSyncState('syncing');
+  try {
+    const data = await getSessionData();
+    const investor = data.investors.find(i => i.id === invId);
+    const room = currentRoom;
+    const student = data.students[room].find(s => s.id === stuId);
+    if (!investor || !student) throw new Error('Data tidak ditemukan');
+    if (investor.balance < amount) { showToast(`Saldo ${investor.name} tidak cukup!`, true); setSyncState('ok'); return; }
+
+    investor.balance -= amount;
+    student.investments.push({ investorId: invId, investorName: investor.name, amount });
+    student.total += amount;
+
+    const now = new Date();
+    const time = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    data.log.push({ time, investor: investor.name, student: student.name, amount, note });
+
+    await saveSessionData(data);
+    lastHash = '';
+    closeModal();
+    renderData(data);
+    setSyncState('ok');
+    showToast(`✅ ${fmt(amount)} dari ${investor.name} → ${student.name}`);
+  } catch(e) {
+    showToast('Error: ' + e.message, true);
+    setSyncState('error');
+  }
+}
+
+// ─── RESET ───────────────────────────────────────────────
+function resetAll() {
+  if (!confirm('Reset semua data sesi ini?')) return;
+  clearInterval(pollingInterval);
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('setupScreen').style.display = 'flex';
+  document.getElementById('investorSetupList').innerHTML = '';
+  addInvestorRow('Guru 1', 'A');
+  addInvestorRow('Guru 2', 'A');
+  addInvestorRow('Guru 3', 'B');
+  sessionKey = '';
+  lastHash = '';
+}
+
+// ─── REKAP ───────────────────────────────────────────────
+async function openRekap() {
+  const data = await getSessionData();
+  if (!data) { showToast('Gagal memuat data!', true); return; }
+  const { investors, students, log } = data;
+  const allStudents = [...(students.A || []), ...(students.B || [])];
+  const sorted = [...allStudents].sort((a, b) => b.total - a.total);
+  const totalAllInvested = investors.reduce((s, i) => s + (i.initial - i.balance), 0);
+  const totalAllSisa = investors.reduce((s, i) => s + i.balance, 0);
+  const invested = sorted.filter(s => s.total > 0);
+  const notInvested = sorted.filter(s => s.total === 0);
+
+  document.getElementById('rekapSessionInfo').textContent =
+    `Sesi: ${sessionKey} · ${allStudents.length} siswa · ${investors.length} investor · ${(log||[]).length} transaksi`;
+
+  // Podium top 3
+  const podiumEmojis = ['🥇','🥈','🥉'];
+  const podiumClass = ['first','second','third'];
+  const podiumHtml = sorted.slice(0,3).map((s,i) => `
+    <div class="podium-card ${podiumClass[i]}">
+      <div class="podium-rank">${podiumEmojis[i]}</div>
+      <div class="podium-name">${s.name}</div>
+      <div class="podium-amount">${fmt(s.total)}</div>
+      <div class="podium-investors">${(s.investments||[]).map(inv => inv.investorName).join(', ')}</div>
+    </div>`).join('');
+
+  // Summary pills
+  const summaryHtml = `
+    <div class="summary-pills">
+      <div class="summary-pill"><div class="val">${fmt(totalAllInvested)}</div><div class="lbl">Total Diinvestasikan</div></div>
+      <div class="summary-pill"><div class="val">${fmt(totalAllSisa)}</div><div class="lbl">Saldo Tersisa</div></div>
+      <div class="summary-pill"><div class="val">${invested.length} / ${allStudents.length}</div><div class="lbl">Siswa Dapat Investasi</div></div>
+      <div class="summary-pill"><div class="val">${(log||[]).length}</div><div class="lbl">Total Transaksi</div></div>
+    </div>`;
+
+  // Full ranking table
+  const rankRows = sorted.map((s, i) => `
+    <tr>
+      <td class="rank-col">#${i+1}</td>
+      <td><strong>${s.name}</strong></td>
+      <td style="font-size:0.7rem;color:var(--muted)">${s.room === 'A' ? 'Ruang A' : 'Ruang B'}</td>
+      <td class="${s.total > 0 ? 'amount-col' : 'zero-col'}">${s.total > 0 ? fmt(s.total) : '—'}</td>
+      <td style="font-size:0.7rem;color:var(--muted)">${(s.investments||[]).map(inv => inv.investorName).join(', ') || '—'}</td>
+    </tr>`).join('');
+
+  // Investor summary
+  const invRows = investors.map(inv => `
+    <tr>
+      <td><strong>${inv.name}</strong></td>
+      <td style="font-size:0.7rem;color:var(--muted)">Ruang ${inv.room}</td>
+      <td class="investor-bal">${fmt(inv.balance)}</td>
+      <td class="amount-col">${fmt(inv.initial - inv.balance)}</td>
+      <td style="font-size:0.7rem;color:var(--muted)">${((inv.initial - inv.balance)/inv.initial*100).toFixed(0)}% terpakai</td>
+    </tr>`).join('');
+
+  document.getElementById('rekapBody').innerHTML = `
+    ${summaryHtml}
+    <div class="rekap-section-title">🏆 Podium Teratas</div>
+    <div class="rekap-podium">${podiumHtml || '<div style="color:var(--muted);font-size:0.82rem">Belum ada investasi.</div>'}</div>
+    <div class="rekap-section-title">📊 Ranking Lengkap Siswa</div>
+    <table class="rekap-table">
+      <thead><tr><th>#</th><th>Nama / Kelompok</th><th>Ruang</th><th>Total Investasi</th><th>Investor</th></tr></thead>
+      <tbody>${rankRows}</tbody>
+    </table>
+    <div class="rekap-section-title">💼 Saldo Akhir Investor</div>
+    <table class="rekap-table">
+      <thead><tr><th>Investor</th><th>Ruang</th><th>Saldo Sisa</th><th>Diinvestasikan</th><th>Utilisasi</th></tr></thead>
+      <tbody>${invRows}</tbody>
+    </table>
+  `;
+
+  document.getElementById('rekapModal').classList.add('show');
+}
+
+function closeRekap() {
+  document.getElementById('rekapModal').classList.remove('show');
+}
+
+function printRekap() {
+  window.print();
+}
+
+
+function showToast(msg, error = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (error ? ' error' : '');
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+// ─── INIT ────────────────────────────────────────────────
+window.onload = () => {
+  addInvestorRow('Guru 1', 'A');
+  addInvestorRow('Guru 2', 'A');
+  addInvestorRow('Guru 3', 'B');
+  genKey();
+};
+</script>
+</body>
+</html>
